@@ -78,7 +78,8 @@ class Crud:
 
     def update_game(self, game_id: int, board: list, status: str, winner: str | None = None, 
                     current_player: str | None = None, moves: list | None = None) -> Game | None:
-        """Update game state"""
+        """Update mutable game fields and persist them atomically.
+        """
         with Session(self._engine) as session:
             game = session.query(Game).filter(Game.id == game_id).first()
             if not game:

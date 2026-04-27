@@ -224,3 +224,81 @@ class TestGameAPI:
         response = client.delete(f"/games/{game_id}", headers=auth_headers)
         assert response.status_code == 400
         assert "completed" in response.json()["detail"].lower()
+
+    def test_register_duplicate_user_conflict(self, client, user_credentials):
+        """Registering an existing username is rejected with 409."""
+        first_response = client.post("/auth/register", json=user_credentials)
+        assert first_response.status_code == 201
+
+        second_response = client.post("/auth/register", json=user_credentials)
+        assert second_response.status_code == 409
+        assert "already exists" in second_response.json()["detail"].lower()
+
+    def test_login_invalid_password_rejected(self, client, user_credentials):
+        """Login fails with 401 when password does not match stored hash."""
+        register_response = client.post("/auth/register", json=user_credentials)
+        assert register_response.status_code == 201
+
+        response = client.post(
+            "/auth/token",
+            json={
+                "user_name": user_credentials["user_name"],
+                "password": "wrong-password",
+            },
+        )
+        assert response.status_code == 401
+        assert "invalid username or password" in response.json()["detail"].lower()
+
+    def test_games_endpoint_rejects_invalid_token(self, client):
+        """Protected game endpoints reject malformed bearer tokens."""
+        response = client.get("/games", headers={"Authorization": "Bearer not-a-valid-token"})
+        assert response.status_code == 401
+        assert "invalid" in response.json()["detail"].lower()
+
+    def test_user_cannot_access_other_users_game(self, client):
+        """Game endpoints enforce ownership and hide foreign games as not found."""
+        owner_credentials = {
+            "user_name": f"owner_{uuid.uuid4().hex[:8]}",
+            "password": "secret123",
+            "name": "Owner",
+        }
+        intruder_credentials = {
+            "user_name": f"intruder_{uuid.uuid4().hex[:8]}",
+            "password": "secret123",
+            "name": "Intruder",
+        }
+
+        owner_register = client.post("/auth/register", json=owner_credentials)
+        intruder_register = client.post("/auth/register", json=intruder_credentials)
+        assert owner_register.status_code == 201
+        assert intruder_register.status_code == 201
+
+        owner_headers = {
+            "Authorization": f"Bearer {owner_register.json()['access_token']}"
+        }
+        intruder_headers = {
+            "Authorization": f"Bearer {intruder_register.json()['access_token']}"
+        }
+
+        game_response = client.post("/games", headers=owner_headers)
+        assert game_response.status_code == 201
+        game_id = game_response.json()["id"]
+
+        # Foreign users should not be able to discover or mutate the game.
+        get_response = client.get(f"/games/{game_id}", headers=intruder_headers)
+        assert get_response.status_code == 404
+
+        move_response = client.put(f"/games/{game_id}/move/1", headers=intruder_headers)
+        assert move_response.status_code == 404
+
+        # Finish game as owner to validate delete-authorization separately from "ongoing" rule.
+        client.put(f"/games/{game_id}/move/1", headers=owner_headers)
+        client.put(f"/games/{game_id}/move/4", headers=owner_headers)
+        client.put(f"/games/{game_id}/move/2", headers=owner_headers)
+        client.put(f"/games/{game_id}/move/5", headers=owner_headers)
+        final_move = client.put(f"/games/{game_id}/move/3", headers=owner_headers)
+        assert final_move.status_code == 200
+        assert final_move.json()["status"] == "won"
+
+        delete_response = client.delete(f"/games/{game_id}", headers=intruder_headers)
+        assert delete_response.status_code == 404

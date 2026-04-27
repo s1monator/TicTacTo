@@ -542,6 +542,7 @@ def define_routes(app: FastAPI) -> None:
                     detail=f"Invalid position: {position}. Position must be between 1 and 9.",
                 )
 
+        # API positions are 1-9 for clients, while the engine uses 0-8 indices.
             board_index = position - 1
             game = crud.get_game(game_id=game_id)
             if not game or game.user_id != current_user.entity_id:
@@ -568,6 +569,7 @@ def define_routes(app: FastAPI) -> None:
 
             game.moves.append({"position": position, "player": game.current_player})
 
+            # Compute status from the mutated board before switching players.
             new_status = GameEngine.get_game_status(game.board)
             winner = game.current_player if new_status == "won" else None
             next_player = GameEngine.get_next_player(game.current_player)
