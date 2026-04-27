@@ -8,9 +8,9 @@ requires = [
 [project]
 authors = [ { name = "Robert Ulmer", email = "rulmer@lr.htlweiz.at" } ]
 
-name = "BACKEND_NAME_PLACEHOLDER"
-version = "0.0.1"
-description = "Backend description:"
+name = "tictactoe-api"
+version = "1.0.0"
+description = "A RESTful API for TicTacToe game with game history and move tracking"
 readme = "README.md"
 requires-python = ">3.13,<4.0"
 license = "GPL-3.0-or-later"
@@ -19,11 +19,13 @@ keywords = [
   "backend",
   "fastapi",
   "sql",
-  "sqlalchemy"
+  "sqlalchemy",
+  "tictactoe",
+  "game"
 ]
 
 classifiers = [
-  "Development Status :: 1 - Early prototype",
+  "Development Status :: 4 - Beta",
   "Environment :: Console",
   "Natural Language :: English",
   "Operating System :: MacOS",
@@ -40,12 +42,11 @@ dependencies = [
   "pydantic>=2",
   "python-jose>=3.5",
   "sqlalchemy>=2",
-  "uvicorn"
+  "uvicorn[standard]>=0.27"
 ]
 
 [project.scripts]
-BACKEND_NAME_PLACEHOLDER_test = "BACKEND_NAME_PLACEHOLDER.utils:test"
-BACKEND_NAME_PLACEHOLDER_user = "BACKEND_NAME_PLACEHOLDER.utils:user_main"
+tictactoe-api = "backend_opriessnig.cli:main"
 
 [project.urls]
 "Homepage" = "https://BACKEND_NAME_PLACEHOLDER.com"
