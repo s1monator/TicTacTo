@@ -203,12 +203,7 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
-      <header className="hero">
-        <p className="hero-kicker">INSY Unterricht</p>
-        <h1>TicTacToe Arena</h1>
-        <p className="hero-text">React UI fuer Registrierung, Login, Spielzug und Historie auf eurer FastAPI.</p>
-      </header>
+          <div className="app-shell">
 
       <section className="layout-grid">
         <article className="panel auth-panel">
@@ -311,7 +306,7 @@ function App() {
           <p className={`message ${message.type}`}>{message.text}</p>
         </article>
       </section>
-    </main>
+    </div>
   )
 }
 
